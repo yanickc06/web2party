@@ -1,0 +1,293 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTHENTIFIZIERUNG ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          Role      @default(USER)
+  isActive      Boolean   @default(false) // Muss bestätigt werden
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  parties       Party[]
+  files         File[]
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+// ==================== KUNDENVERWALTUNG ====================
+
+model Customer {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  street          String?
+  city            String?
+  postalCode      String?
+  country         String?   @default("Deutschland")
+  birthDate       DateTime?
+  bankName        String?
+  iban            String?
+  bic             String?
+  musicTaste      String?   // z.B. "House, Techno, 80er"
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  locations       Location[]
+  parties         Party[]
+  invoices        Invoice[]
+}
+
+model Location {
+  id              String    @id @default(cuid())
+  name            String
+  street          String?
+  city            String?
+  postalCode      String?
+  country         String?   @default("Deutschland")
+  capacity        Int?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  parties         Party[]
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique
+  amount          Decimal       @db.Decimal(10, 2)
+  tax             Decimal       @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  status          InvoiceStatus @default(DRAFT)
+  dueDate         DateTime?
+  paidDate        DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  partyId         String?
+  party           Party?        @relation(fields: [partyId], references: [id], onDelete: SetNull)
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// ==================== PARTNERVERWALTUNG ====================
+
+model Partner {
+  id              String    @id @default(cuid())
+  name            String
+  contactPerson   String?
+  email           String?
+  phone           String?
+  website         String?
+  benefits        String?   // Vorteile beim Partner
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  equipment       Equipment[]
+}
+
+// ==================== TECHNIKVERWALTUNG ====================
+
+model Equipment {
+  id              String          @id @default(cuid())
+  name            String
+  category        EquipmentCategory
+  brand           String?
+  model           String?
+  serialNumber    String?
+  location        String?         // Standort
+  isOwned         Boolean         @default(true)
+  rentalPrice     Decimal?        @db.Decimal(10, 2)
+  purchasePrice   Decimal?        @db.Decimal(10, 2)
+  purchaseDate    DateTime?
+  specs           String?         // Technische Daten
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations (Partner für Miete)
+  rentalPartnerId String?
+  rentalPartner   Partner?        @relation(fields: [rentalPartnerId], references: [id], onDelete: SetNull)
+  partyEquipment  PartyEquipment[]
+}
+
+enum EquipmentCategory {
+  SPEAKER
+  MIXER
+  CONTROLLER
+  LIGHTS
+  MICROPHONE
+  CABLES
+  STAND
+  EFFECTS
+  OTHER
+}
+
+// ==================== MUSIKVERWALTUNG ====================
+
+model Song {
+  id              String    @id @default(cuid())
+  title           String
+  artist          String
+  album           String?
+  bpm             Int?
+  key             String?   // Tonart
+  genre           String?
+  mood            String?   // Stimmung
+  duration        Int?      // Dauer in Sekunden
+  year            Int?
+  mp3Path         String?   // Pfad zur MP3-Datei
+  hasMp3          Boolean   @default(false)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  playlistSongs   PlaylistSong[]
+}
+
+model Playlist {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  songs           PlaylistSong[]
+  parties         Party[]
+}
+
+model PlaylistSong {
+  id              String    @id @default(cuid())
+  position        Int       // Reihenfolge in der Playlist
+  
+  // Relations
+  playlistId      String
+  playlist        Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  songId          String
+  song            Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  
+  @@unique([playlistId, songId])
+}
+
+// ==================== DATEIMANAGER ====================
+
+model Folder {
+  id              String    @id @default(cuid())
+  name            String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Self-relation für verschachtelte Ordner
+  parentId        String?
+  parent          Folder?   @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children        Folder[]  @relation("FolderToFolder")
+  
+  // Relations
+  files           File[]
+}
+
+model File {
+  id              String    @id @default(cuid())
+  name            String
+  originalName    String
+  mimeType        String
+  size            Int       // Größe in Bytes
+  path            String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  folderId        String?
+  folder          Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  uploadedById    String?
+  uploadedBy      User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+}
+
+// ==================== PARTYMANAGER ====================
+
+model Party {
+  id              String      @id @default(cuid())
+  name            String
+  date            DateTime
+  startTime       String?
+  endTime         String?
+  status          PartyStatus @default(INQUIRY)
+  guestCount      Int?
+  price           Decimal?    @db.Decimal(10, 2)
+  deposit         Decimal?    @db.Decimal(10, 2)
+  depositPaid     Boolean     @default(false)
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  locationId      String?
+  location        Location?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  playlistId      String?
+  playlist        Playlist?   @relation(fields: [playlistId], references: [id], onDelete: SetNull)
+  createdById     String?
+  createdBy       User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  equipment       PartyEquipment[]
+  invoices        Invoice[]
+}
+
+enum PartyStatus {
+  INQUIRY
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model PartyEquipment {
+  id              String    @id @default(cuid())
+  notes           String?
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  equipmentId     String
+  equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  @@unique([partyId, equipmentId])
+}
