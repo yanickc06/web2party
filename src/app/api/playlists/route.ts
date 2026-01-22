@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         songs: {
           create: (body.songs || []).map((songId: string, index: number) => ({
             songId,
-            order: index,
+            position: index,
           })),
         },
       },

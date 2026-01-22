@@ -29,9 +29,13 @@ export default function NewSongPage() {
       year: formData.get("year")
         ? parseInt(formData.get("year") as string)
         : null,
-      duration: formData.get("duration")
-        ? parseInt(formData.get("duration") as string) * 60
-        : null,
+      duration:
+        (formData.get("durationMin")
+          ? parseInt(formData.get("durationMin") as string) * 60
+          : 0) +
+          (formData.get("durationSec")
+            ? parseInt(formData.get("durationSec") as string)
+            : 0) || null,
       notes: formData.get("notes") || null,
     };
 
@@ -205,16 +209,31 @@ export default function NewSongPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Dauer (Minuten)
+                Dauer
               </label>
-              <input
-                type="number"
-                name="duration"
-                min="1"
-                max="60"
-                placeholder="4"
-                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    name="durationMin"
+                    min="0"
+                    max="60"
+                    placeholder="Min"
+                    className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <span className="text-gray-400 self-center">:</span>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    name="durationSec"
+                    min="0"
+                    max="59"
+                    placeholder="Sek"
+                    className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">

@@ -2,7 +2,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 
 interface PlaylistSong {
-  song: { duration: number | null; filePath: string | null };
+  song: { duration: number | null; mp3Path: string | null };
 }
 
 interface PlaylistWithSongs {
@@ -21,7 +21,7 @@ async function getPlaylists() {
         include: {
           song: true,
         },
-        orderBy: { order: "asc" },
+        orderBy: { position: "asc" },
       },
       _count: {
         select: { parties: true },
@@ -43,11 +43,18 @@ export default async function PlaylistsPage() {
             {playlists.length} Playlists erstellt
           </p>
         </div>
-        <Link
-          href="/dashboard/playlists/new"
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2">
-          <span>+</span> Neue Playlist
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/playlists/smart"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition flex items-center gap-2">
+            <span>🎯</span> Smart-Playlist
+          </Link>
+          <Link
+            href="/dashboard/playlists/new"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2">
+            <span>+</span> Neue Playlist
+          </Link>
+        </div>
       </div>
 
       {/* Playlists Grid */}
@@ -71,7 +78,7 @@ export default async function PlaylistsPage() {
             const hours = Math.floor(totalDuration / 3600);
             const minutes = Math.floor((totalDuration % 3600) / 60);
             const mp3Count = playlist.songs.filter(
-              (ps: PlaylistSong) => ps.song.filePath,
+              (ps: PlaylistSong) => ps.song.mp3Path,
             ).length;
 
             return (

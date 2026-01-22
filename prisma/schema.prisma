@@ -22,6 +22,16 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
+  // DJ Profil Felder
+  djName        String?   // Künstlername
+  photoUrl      String?   // Profilbild
+  phone         String?   // Telefon
+  website       String?   // Website
+  musicStyles   String?   // Musikstile (kommagetrennt)
+  experience    String?   // Erfahrung/Bio
+  equipment     String?   // Eigene Ausrüstung
+  socialMedia   String?   // Social Media Links (JSON)
+  
   // Relations
   parties       Party[]
   files         File[]
@@ -66,8 +76,11 @@ model Location {
   city            String?
   postalCode      String?
   country         String?   @default("Deutschland")
+  contactPerson   String?
+  phone           String?
+  email           String?
   capacity        Int?
-  notes           String?
+  notes           String?   @db.Text
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -139,6 +152,7 @@ model Equipment {
   purchaseDate    DateTime?
   specs           String?         // Technische Daten
   notes           String?
+  imageUrl        String?         // Bild-URL
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   
@@ -175,18 +189,37 @@ model Song {
   year            Int?
   mp3Path         String?   // Pfad zur MP3-Datei
   hasMp3          Boolean   @default(false)
+  tags            String?   // Komma-separierte Tags (z.B. "Opener,Peak Time")
   notes           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
   // Relations
   playlistSongs   PlaylistSong[]
+  cuePoints       CuePoint[]
+}
+
+// Cue-Points für Songs (Intro, Drop, Outro, etc.)
+model CuePoint {
+  id              String    @id @default(cuid())
+  name            String    // z.B. "Intro", "Drop", "Breakdown", "Outro"
+  time            Float     // Zeit in Sekunden
+  color           String?   // Farbe für UI (z.B. "#ff0000")
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  songId          String
+  song            Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  
+  @@index([songId])
 }
 
 model Playlist {
   id              String    @id @default(cuid())
   name            String
   description     String?
+  isSmartPlaylist Boolean   @default(false)  // Ist dies eine Smart-Playlist?
+  smartCriteria   String?   @db.Text          // JSON mit Smart-Playlist Kriterien
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -270,6 +303,92 @@ model Party {
   createdBy       User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
   equipment       PartyEquipment[]
   invoices        Invoice[]
+  musicRequests   MusicRequest[]
+  requestCode     String?     @unique  // Einzigartiger Code für Musikwünsche
+  timelineEntries PartyTimelineEntry[]
+  checklistItems  PartyChecklistItem[]
+  partyNotes      PartyNote[]
+  playedSongs     PlayedSong[]
+}
+
+// Timeline-Einträge für DJ-Set Zeitplan
+model PartyTimelineEntry {
+  id              String    @id @default(cuid())
+  time            String    // z.B. "22:00"
+  description     String    // z.B. "Opening Set starten"
+  songId          String?   // Optional: Verknüpfter Song
+  completed       Boolean   @default(false)
+  order           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  
+  @@index([partyId])
+}
+
+// Checkliste für Party-Vorbereitung
+model PartyChecklistItem {
+  id              String    @id @default(cuid())
+  title           String    // z.B. "Vertrag unterschrieben"
+  category        String?   // z.B. "Vorbereitung", "Equipment", "Musik"
+  checked         Boolean   @default(false)
+  order           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  
+  @@index([partyId])
+}
+
+// Erweiterte Notizen mit Kategorien
+model PartyNote {
+  id              String    @id @default(cuid())
+  content         String    @db.Text
+  category        NoteCategory @default(GENERAL)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  
+  @@index([partyId])
+}
+
+enum NoteCategory {
+  GENERAL       // Allgemein
+  WISHES        // Kundenwünsche
+  FORBIDDEN     // Verbotene Songs
+  HIGHLIGHTS    // Highlights
+  FEEDBACK      // Feedback nach Event
+}
+
+// Gespielte Songs während einer Party (für Statistiken)
+model PlayedSong {
+  id              String      @id @default(cuid())
+  title           String
+  artist          String?
+  playedAt        DateTime    @default(now())
+  reaction        SongReaction? // Publikumsreaktion
+  notes           String?
+  
+  // Relations
+  partyId         String
+  party           Party       @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  songId          String?     // Optional: Verknüpfung mit Song aus Bibliothek
+  
+  @@index([partyId])
+}
+
+enum SongReaction {
+  AMAZING       // 🔥 Tanzfläche voll
+  GOOD          // 👍 Gut angekommen
+  NEUTRAL       // 😐 Normal
+  BAD           // 👎 Wenig Resonanz
 }
 
 enum PartyStatus {
@@ -281,6 +400,8 @@ enum PartyStatus {
 
 model PartyEquipment {
   id              String    @id @default(cuid())
+  quantity        Int       @default(1)
+  packed          Boolean   @default(false)
   notes           String?
   
   // Relations
@@ -290,4 +411,25 @@ model PartyEquipment {
   equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   
   @@unique([partyId, equipmentId])
+}
+
+// ==================== MUSIKWÜNSCHE ====================
+
+model MusicRequest {
+  id              String    @id @default(cuid())
+  songTitle       String
+  artist          String?
+  guestName       String?
+  status          RequestStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+}
+
+enum RequestStatus {
+  PENDING
+  PLAYED
+  DECLINED
 }

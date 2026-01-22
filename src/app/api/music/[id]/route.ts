@@ -72,6 +72,7 @@ export async function PUT(
         mood: body.mood || null,
         duration: body.duration || null,
         year: body.year || null,
+        tags: body.tags || null,
         notes: body.notes || null,
       },
     });
