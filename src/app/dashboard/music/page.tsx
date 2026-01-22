@@ -3,6 +3,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+// Vordefinierte DJ-Tags
+const DJ_TAGS = [
+  "Opener",
+  "Warm-Up",
+  "Peak Time",
+  "Closing",
+  "Crowd Favorite",
+  "Klassiker",
+  "Neu",
+  "Selten spielen",
+  "Hochzeit",
+  "Geburtstag",
+  "Club",
+  "Lounge",
+];
+
 interface Song {
   id: string;
   title: string;
@@ -10,6 +26,8 @@ interface Song {
   genre: string | null;
   mood: string | null;
   bpm: number | null;
+  key: string | null;
+  tags: string | null;
   mp3Path: string | null;
   _count: { playlistSongs: number };
 }
@@ -21,6 +39,7 @@ export default function MusicPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [genreFilter, setGenreFilter] = useState("");
   const [moodFilter, setMoodFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
   const [bulkAction, setBulkAction] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,8 +65,18 @@ export default function MusicPage() {
       (song.artist || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGenre = !genreFilter || song.genre === genreFilter;
     const matchesMood = !moodFilter || song.mood === moodFilter;
-    return matchesSearch && matchesGenre && matchesMood;
+    const matchesTags = !tagFilter || (song.tags || "").includes(tagFilter);
+    return matchesSearch && matchesGenre && matchesMood && matchesTags;
   });
+
+  // Alle verwendeten Tags sammeln
+  const allTags = Array.from(
+    new Set(
+      songs
+        .flatMap((s) => (s.tags || "").split(",").filter(Boolean))
+        .map((t) => t.trim()),
+    ),
+  ).sort();
 
   // Alle auswählen/abwählen
   function toggleSelectAll() {
@@ -110,6 +139,32 @@ export default function MusicPage() {
     }
   }
 
+  // Bulk-Tag hinzufügen
+  async function handleBulkAddTag(tag: string) {
+    setBulkAction("tag");
+
+    try {
+      const res = await fetch("/api/music/bulk-tag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          songIds: Array.from(selectedIds),
+          tag,
+          action: "add",
+        }),
+      });
+
+      if (res.ok) {
+        await fetchSongs();
+        alert(`Tag "${tag}" hinzugefügt!`);
+      }
+    } catch (error) {
+      console.error("Error adding tag:", error);
+    } finally {
+      setBulkAction(null);
+    }
+  }
+
   // Genres aus Songs extrahieren
   const uniqueGenres = [...new Set(songs.map((s) => s.genre).filter(Boolean))];
   const uniqueMoods = [...new Set(songs.map((s) => s.mood).filter(Boolean))];
@@ -153,6 +208,23 @@ export default function MusicPage() {
             {selectedIds.size} Song(s) ausgewählt
           </span>
           <div className="flex gap-2">
+            {/* Tag Dropdown */}
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkAddTag(e.target.value);
+                  e.target.value = "";
+                }
+              }}
+              disabled={bulkAction !== null}
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-600/50 text-white rounded-lg transition cursor-pointer">
+              <option value="">🏷️ Tag hinzufügen...</option>
+              {DJ_TAGS.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
             <button
               onClick={handleBulkReanalyze}
               disabled={bulkAction !== null}
@@ -219,6 +291,17 @@ export default function MusicPage() {
             </option>
           ))}
         </select>
+        <select
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+          className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+          <option value="">Alle Tags</option>
+          {allTags.map((t) => (
+            <option key={t} value={t}>
+              🏷️ {t}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Songs Table */}
@@ -261,13 +344,13 @@ export default function MusicPage() {
                   Genre / Stimmung
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  BPM
+                  BPM / Key
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Tags
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   MP3
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  Playlists
                 </th>
                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   Aktionen
@@ -307,16 +390,35 @@ export default function MusicPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-300">{song.bpm || "-"}</td>
+                  <td className="px-6 py-4">
+                    <span className="text-gray-300">{song.bpm || "-"}</span>
+                    {song.key && (
+                      <span className="ml-2 text-xs text-cyan-400">
+                        {song.key}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {song.tags
+                        ?.split(",")
+                        .filter(Boolean)
+                        .map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-block px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-300 rounded">
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      {!song.tags && <span className="text-gray-500">-</span>}
+                    </div>
+                  </td>
                   <td className="px-6 py-4">
                     {song.mp3Path ? (
                       <span className="text-green-400">✓</span>
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-purple-400">
-                    {song._count.playlistSongs}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Link

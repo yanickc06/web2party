@@ -51,6 +51,39 @@ export async function POST(request: NextRequest) {
         // Metadaten auslesen
         const metadata = await mm.parseBuffer(buffer, file.type);
 
+        // Titel und Künstler für Duplikat-Prüfung ermitteln
+        const checkTitle =
+          metadata.common.title ||
+          file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+        const checkArtist = metadata.common.artist || null;
+
+        // DUPLIKAT-ERKENNUNG: Prüfe ob Song bereits existiert
+        const existingSong = await prisma.song.findFirst({
+          where: {
+            title: {
+              equals: checkTitle,
+              // Case-insensitive Vergleich
+            },
+            ...(checkArtist && {
+              artist: {
+                equals: checkArtist,
+              },
+            }),
+          },
+        });
+
+        if (existingSong) {
+          console.log(
+            `[Bulk Upload] DUPLIKAT erkannt: "${checkTitle}" von "${checkArtist || "Unbekannt"}" existiert bereits (ID: ${existingSong.id})`,
+          );
+          results.push({
+            filename: file.name,
+            success: false,
+            error: `Duplikat: "${checkTitle}" von "${checkArtist || "Unbekannt"}" existiert bereits in der Bibliothek`,
+          });
+          continue; // Überspringe diesen Song
+        }
+
         // Eindeutiger Dateiname
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -61,10 +94,8 @@ export async function POST(request: NextRequest) {
         await writeFile(filePath, buffer);
 
         // Song in DB erstellen
-        const title =
-          metadata.common.title ||
-          file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
-        const artist = metadata.common.artist || null;
+        const title = checkTitle;
+        const artist = checkArtist;
         const album = metadata.common.album || null;
         const year = metadata.common.year || null;
 

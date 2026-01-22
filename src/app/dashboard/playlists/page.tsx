@@ -43,11 +43,18 @@ export default async function PlaylistsPage() {
             {playlists.length} Playlists erstellt
           </p>
         </div>
-        <Link
-          href="/dashboard/playlists/new"
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2">
-          <span>+</span> Neue Playlist
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/playlists/smart"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium transition flex items-center gap-2">
+            <span>🎯</span> Smart-Playlist
+          </Link>
+          <Link
+            href="/dashboard/playlists/new"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition flex items-center gap-2">
+            <span>+</span> Neue Playlist
+          </Link>
+        </div>
       </div>
 
       {/* Playlists Grid */}

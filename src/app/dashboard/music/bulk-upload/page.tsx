@@ -328,7 +328,14 @@ export default function BulkUploadPage() {
                 {successCount} von {results.length} Songs erfolgreich importiert
               </h2>
               {failCount > 0 && (
-                <p className="text-red-400">{failCount} Fehler</p>
+                <p className="text-red-400">
+                  {failCount}{" "}
+                  {results.filter(
+                    (r) => !r.success && r.error?.includes("Duplikat"),
+                  ).length > 0
+                    ? `(${results.filter((r) => !r.success && r.error?.includes("Duplikat")).length} Duplikate übersprungen)`
+                    : "Fehler"}
+                </p>
               )}
               <p className="text-green-400 text-sm mt-2">
                 ✅ BPM & Stimmung automatisch analysiert
@@ -348,11 +355,19 @@ export default function BulkUploadPage() {
                 <div
                   key={index}
                   className={`px-4 py-3 flex items-center justify-between ${
-                    result.success ? "" : "bg-red-900/10"
+                    result.success
+                      ? ""
+                      : result.error?.includes("Duplikat")
+                        ? "bg-yellow-900/10"
+                        : "bg-red-900/10"
                   }`}>
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">
-                      {result.success ? "✅" : "❌"}
+                      {result.success
+                        ? "✅"
+                        : result.error?.includes("Duplikat")
+                          ? "📋"
+                          : "❌"}
                     </span>
                     <div>
                       <p className="text-white">
@@ -364,7 +379,10 @@ export default function BulkUploadPage() {
                         </p>
                       )}
                       {result.error && (
-                        <p className="text-red-400 text-sm">{result.error}</p>
+                        <p
+                          className={`text-sm ${result.error?.includes("Duplikat") ? "text-yellow-400" : "text-red-400"}`}>
+                          {result.error}
+                        </p>
                       )}
                     </div>
                   </div>

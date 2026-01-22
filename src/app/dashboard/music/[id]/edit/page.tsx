@@ -4,6 +4,22 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// Vordefinierte DJ-Tags
+const DJ_TAGS = [
+  "Opener",
+  "Warm-Up",
+  "Peak Time",
+  "Closing",
+  "Crowd Favorite",
+  "Klassiker",
+  "Neu",
+  "Selten spielen",
+  "Hochzeit",
+  "Geburtstag",
+  "Club",
+  "Lounge",
+];
+
 interface Song {
   id: string;
   title: string;
@@ -12,7 +28,9 @@ interface Song {
   year: number | null;
   genre: string | null;
   bpm: number | null;
+  key: string | null;
   mood: string | null;
+  tags: string | null;
   mp3Path: string | null;
   notes: string | null;
 }
@@ -30,6 +48,7 @@ export default function EditSongPage({
   const [song, setSong] = useState<Song | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentFile, setCurrentFile] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     fetch(`/api/music/${id}`)
@@ -37,6 +56,12 @@ export default function EditSongPage({
       .then((s) => {
         setSong(s);
         setCurrentFile(s.mp3Path);
+        setSelectedTags(
+          (s.tags || "")
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter(Boolean),
+        );
       })
       .finally(() => setLoadingData(false));
   }, [id]);
@@ -80,7 +105,9 @@ export default function EditSongPage({
         : null,
       genre: formData.get("genre") || null,
       bpm: formData.get("bpm") ? parseInt(formData.get("bpm") as string) : null,
+      key: formData.get("key") || null,
       mood: formData.get("mood") || null,
+      tags: selectedTags.join(",") || null,
       notes: formData.get("notes") || null,
       mp3Path: currentFile,
     };
@@ -202,7 +229,7 @@ export default function EditSongPage({
 
         <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">🎧 DJ-Info</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 BPM
@@ -211,6 +238,18 @@ export default function EditSongPage({
                 type="number"
                 name="bpm"
                 defaultValue={song.bpm || ""}
+                className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Key (Tonart)
+              </label>
+              <input
+                type="text"
+                name="key"
+                defaultValue={song.key || ""}
+                placeholder="z.B. Am, C, F#m"
                 className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
@@ -231,6 +270,39 @@ export default function EditSongPage({
                 <option value="Happy">😊 Happy</option>
               </select>
             </div>
+          </div>
+
+          {/* Tags Section */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              🏷️ Tags
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {DJ_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    if (selectedTags.includes(tag)) {
+                      setSelectedTags(selectedTags.filter((t) => t !== tag));
+                    } else {
+                      setSelectedTags([...selectedTags, tag]);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm transition ${
+                    selectedTags.includes(tag)
+                      ? "bg-yellow-500 text-gray-900 font-medium"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            {selectedTags.length > 0 && (
+              <p className="mt-3 text-sm text-gray-400">
+                Ausgewählt: {selectedTags.join(", ")}
+              </p>
+            )}
           </div>
         </div>
 

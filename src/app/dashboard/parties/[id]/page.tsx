@@ -92,7 +92,27 @@ export default function PartyDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href={`/dashboard/parties/${id}/timeline`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            🕐 Timeline
+          </Link>
+          <Link
+            href={`/dashboard/parties/${id}/checklist`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            ✅ Checkliste
+          </Link>
+          <Link
+            href={`/dashboard/parties/${id}/notes`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            📝 Notizen
+          </Link>
+          <Link
+            href={`/dashboard/parties/${id}/statistics`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            📊 Statistiken
+          </Link>
           <Link
             href={`/dashboard/parties/${id}/wuensche`}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">

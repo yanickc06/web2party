@@ -54,6 +54,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // DUPLIKAT-ERKENNUNG: Prüfe ob Song bereits existiert
+    const existingSong = await prisma.song.findFirst({
+      where: {
+        title: {
+          equals: body.title,
+        },
+        ...(body.artist && {
+          artist: {
+            equals: body.artist,
+          },
+        }),
+      },
+    });
+
+    if (existingSong) {
+      return NextResponse.json(
+        {
+          error: `Song "${body.title}" von "${body.artist || "Unbekannt"}" existiert bereits in der Bibliothek`,
+        },
+        { status: 409 }, // 409 Conflict
+      );
+    }
+
     const song = await prisma.song.create({
       data: {
         title: body.title,
@@ -65,6 +88,7 @@ export async function POST(request: NextRequest) {
         mood: body.mood || null,
         duration: body.duration || null,
         year: body.year || null,
+        tags: body.tags || null,
         notes: body.notes || null,
         hasMp3: false,
       },
