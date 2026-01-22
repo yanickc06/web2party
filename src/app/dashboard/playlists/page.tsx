@@ -2,7 +2,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 
 interface PlaylistSong {
-  song: { duration: number | null; filePath: string | null };
+  song: { duration: number | null; mp3Path: string | null };
 }
 
 interface PlaylistWithSongs {
@@ -21,7 +21,7 @@ async function getPlaylists() {
         include: {
           song: true,
         },
-        orderBy: { order: "asc" },
+        orderBy: { position: "asc" },
       },
       _count: {
         select: { parties: true },
@@ -71,7 +71,7 @@ export default async function PlaylistsPage() {
             const hours = Math.floor(totalDuration / 3600);
             const minutes = Math.floor((totalDuration % 3600) / 60);
             const mp3Count = playlist.songs.filter(
-              (ps: PlaylistSong) => ps.song.filePath,
+              (ps: PlaylistSong) => ps.song.mp3Path,
             ).length;
 
             return (

@@ -35,27 +35,16 @@ export async function POST(request: NextRequest) {
 
     await writeFile(filePath, buffer);
 
-    // Determine file type
+    // Determine mime type
     const mimeType = file.type || "application/octet-stream";
-    let fileType = "other";
-    if (mimeType.startsWith("image/")) fileType = "image";
-    else if (mimeType.startsWith("audio/")) fileType = "audio";
-    else if (mimeType.startsWith("video/")) fileType = "video";
-    else if (mimeType.includes("pdf")) fileType = "pdf";
-    else if (
-      mimeType.includes("document") ||
-      mimeType.includes("word") ||
-      mimeType.includes("text")
-    )
-      fileType = "document";
 
     // Save to database
     const dbFile = await prisma.file.create({
       data: {
-        name: file.name,
+        name: safeName,
+        originalName: file.name,
         path: `/uploads/files/${filename}`,
         size: file.size,
-        type: fileType,
         mimeType: mimeType,
         folderId: folderId || null,
       },

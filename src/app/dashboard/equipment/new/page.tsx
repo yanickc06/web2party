@@ -15,6 +15,8 @@ export default function NewEquipmentPage() {
   const [error, setError] = useState("");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [isOwned, setIsOwned] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/partners")
@@ -22,6 +24,16 @@ export default function NewEquipmentPage() {
       .then((data) => setPartners(data))
       .catch(() => {});
   }, []);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,9 +59,27 @@ export default function NewEquipmentPage() {
       specs: formData.get("specs") || null,
       notes: formData.get("notes") || null,
       rentalPartnerId: formData.get("rentalPartnerId") || null,
+      imageUrl: null as string | null,
     };
 
     try {
+      // Falls Bild hochgeladen, erst Bild speichern
+      if (imageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("file", imageFile);
+        imageFormData.append("folderId", "equipment");
+
+        const imageRes = await fetch("/api/files", {
+          method: "POST",
+          body: imageFormData,
+        });
+
+        if (imageRes.ok) {
+          const imageData = await imageRes.json();
+          data.imageUrl = imageData.path;
+        }
+      }
+
       const response = await fetch("/api/equipment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,6 +285,31 @@ export default function NewEquipmentPage() {
         <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">📝 Details</h2>
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Bild
+              </label>
+              <div className="flex items-start gap-4">
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Vorschau"
+                    className="w-32 h-32 object-cover rounded-lg border border-gray-600"
+                  />
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-600 file:text-white file:cursor-pointer"
+                  />
+                  <p className="text-gray-500 text-sm mt-1">
+                    JPG, PNG oder WebP
+                  </p>
+                </div>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Technische Daten

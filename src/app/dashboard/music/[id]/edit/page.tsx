@@ -13,7 +13,7 @@ interface Song {
   genre: string | null;
   bpm: number | null;
   mood: string | null;
-  filePath: string | null;
+  mp3Path: string | null;
   notes: string | null;
 }
 
@@ -36,7 +36,7 @@ export default function EditSongPage({
       .then((r) => r.json())
       .then((s) => {
         setSong(s);
-        setCurrentFile(s.filePath);
+        setCurrentFile(s.mp3Path);
       })
       .finally(() => setLoadingData(false));
   }, [id]);
@@ -82,7 +82,7 @@ export default function EditSongPage({
       bpm: formData.get("bpm") ? parseInt(formData.get("bpm") as string) : null,
       mood: formData.get("mood") || null,
       notes: formData.get("notes") || null,
-      filePath: currentFile,
+      mp3Path: currentFile,
     };
 
     try {

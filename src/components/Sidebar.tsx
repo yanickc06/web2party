@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Profile {
+  photoUrl: string | null;
+  djName: string | null;
+}
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: "🏠" },
   { name: "Partys", href: "/dashboard/parties", icon: "🎉" },
   { name: "Kunden", href: "/dashboard/customers", icon: "👥" },
+  { name: "Rechnungen", href: "/dashboard/invoices", icon: "💰" },
   { name: "Musik", href: "/dashboard/music", icon: "🎵" },
   { name: "Playlists", href: "/dashboard/playlists", icon: "📋" },
   { name: "Technik", href: "/dashboard/equipment", icon: "🔊" },
@@ -25,8 +32,18 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const isAdmin = session?.user?.role === "ADMIN";
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/profile")
+        .then((r) => r.json())
+        .then(setProfile)
+        .catch(() => {});
+    }
+  }, [session]);
 
   return (
     <aside
@@ -53,8 +70,11 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
+          // Dashboard nur aktiv wenn genau /dashboard (nicht bei Unterseiten)
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}
@@ -104,21 +124,33 @@ export default function Sidebar() {
 
       {/* User Info & Logout */}
       <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-            {session?.user?.name?.charAt(0).toUpperCase() || "?"}
-          </div>
+        <Link
+          href="/dashboard/profile"
+          className="flex items-center gap-3 hover:bg-gray-800 rounded-lg p-2 -m-2 transition">
+          {profile?.photoUrl ? (
+            <Image
+              src={profile.photoUrl}
+              alt="Profilbild"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+              {session?.user?.name?.charAt(0).toUpperCase() || "?"}
+            </div>
+          )}
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">
-                {session?.user?.name}
+                {profile?.djName || session?.user?.name}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {session?.user?.email}
+                DJ Profil bearbeiten →
               </p>
             </div>
           )}
-        </div>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={`mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition ${

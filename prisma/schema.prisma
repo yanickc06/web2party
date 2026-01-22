@@ -22,6 +22,16 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
+  // DJ Profil Felder
+  djName        String?   // Künstlername
+  photoUrl      String?   // Profilbild
+  phone         String?   // Telefon
+  website       String?   // Website
+  musicStyles   String?   // Musikstile (kommagetrennt)
+  experience    String?   // Erfahrung/Bio
+  equipment     String?   // Eigene Ausrüstung
+  socialMedia   String?   // Social Media Links (JSON)
+  
   // Relations
   parties       Party[]
   files         File[]
@@ -66,8 +76,11 @@ model Location {
   city            String?
   postalCode      String?
   country         String?   @default("Deutschland")
+  contactPerson   String?
+  phone           String?
+  email           String?
   capacity        Int?
-  notes           String?
+  notes           String?   @db.Text
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -139,6 +152,7 @@ model Equipment {
   purchaseDate    DateTime?
   specs           String?         // Technische Daten
   notes           String?
+  imageUrl        String?         // Bild-URL
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   
@@ -270,6 +284,8 @@ model Party {
   createdBy       User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
   equipment       PartyEquipment[]
   invoices        Invoice[]
+  musicRequests   MusicRequest[]
+  requestCode     String?     @unique  // Einzigartiger Code für Musikwünsche
 }
 
 enum PartyStatus {
@@ -281,6 +297,8 @@ enum PartyStatus {
 
 model PartyEquipment {
   id              String    @id @default(cuid())
+  quantity        Int       @default(1)
+  packed          Boolean   @default(false)
   notes           String?
   
   // Relations
@@ -290,4 +308,25 @@ model PartyEquipment {
   equipment       Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   
   @@unique([partyId, equipmentId])
+}
+
+// ==================== MUSIKWÜNSCHE ====================
+
+model MusicRequest {
+  id              String    @id @default(cuid())
+  songTitle       String
+  artist          String?
+  guestName       String?
+  status          RequestStatus @default(PENDING)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  partyId         String
+  party           Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+}
+
+enum RequestStatus {
+  PENDING
+  PLAYED
+  DECLINED
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import prisma from "@/lib/prisma";
 
 interface EquipmentWithPartner {
@@ -11,6 +12,7 @@ interface EquipmentWithPartner {
   isOwned: boolean;
   rentalPrice: number | null;
   purchasePrice: number | null;
+  imageUrl: string | null;
   rentalPartner: { name: string } | null;
 }
 
@@ -74,66 +76,86 @@ export default async function EquipmentPage() {
             <Link
               key={item.id}
               href={`/dashboard/equipment/${item.id}`}
-              className="bg-gray-800/50 rounded-xl border border-gray-700 p-6 hover:border-purple-500/50 transition group">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">
+              className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden hover:border-purple-500/50 transition group">
+              {/* Equipment Bild */}
+              {item.imageUrl ? (
+                <div className="relative w-full h-40 bg-gray-900">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-40 bg-gray-900 flex items-center justify-center">
+                  <span className="text-6xl opacity-50">
                     {categoryLabels[item.category]?.icon || "📦"}
                   </span>
-                  <div>
-                    <h3 className="font-semibold text-white group-hover:text-purple-300 transition">
-                      {item.name}
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                      {categoryLabels[item.category]?.label || item.category}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    item.isOwned
-                      ? "bg-green-500/20 text-green-400"
-                      : "bg-orange-500/20 text-orange-400"
-                  }`}>
-                  {item.isOwned ? "Eigentum" : "Miete"}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                {item.brand && (
-                  <p className="text-gray-400">
-                    <span className="text-gray-500">Marke:</span> {item.brand}{" "}
-                    {item.model}
-                  </p>
-                )}
-                {item.location && (
-                  <p className="text-gray-400">
-                    <span className="text-gray-500">Standort:</span>{" "}
-                    {item.location}
-                  </p>
-                )}
-                {!item.isOwned && item.rentalPartner && (
-                  <p className="text-gray-400">
-                    <span className="text-gray-500">Miete von:</span>{" "}
-                    {item.rentalPartner.name}
-                  </p>
-                )}
-              </div>
-
-              {(item.rentalPrice || item.purchasePrice) && (
-                <div className="mt-4 pt-4 border-t border-gray-700">
-                  {item.rentalPrice && (
-                    <p className="text-orange-400">
-                      €{Number(item.rentalPrice).toFixed(2)} / Tag Miete
-                    </p>
-                  )}
-                  {item.purchasePrice && (
-                    <p className="text-gray-400 text-sm">
-                      Kaufpreis: €{Number(item.purchasePrice).toFixed(2)}
-                    </p>
-                  )}
                 </div>
               )}
+
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">
+                      {categoryLabels[item.category]?.icon || "📦"}
+                    </span>
+                    <div>
+                      <h3 className="font-semibold text-white group-hover:text-purple-300 transition">
+                        {item.name}
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {categoryLabels[item.category]?.label || item.category}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      item.isOwned
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-orange-500/20 text-orange-400"
+                    }`}>
+                    {item.isOwned ? "Eigentum" : "Miete"}
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-2 text-sm">
+                  {item.brand && (
+                    <p className="text-gray-400">
+                      <span className="text-gray-500">Marke:</span> {item.brand}{" "}
+                      {item.model}
+                    </p>
+                  )}
+                  {item.location && (
+                    <p className="text-gray-400">
+                      <span className="text-gray-500">Standort:</span>{" "}
+                      {item.location}
+                    </p>
+                  )}
+                  {!item.isOwned && item.rentalPartner && (
+                    <p className="text-gray-400">
+                      <span className="text-gray-500">Miete von:</span>{" "}
+                      {item.rentalPartner.name}
+                    </p>
+                  )}
+                </div>
+
+                {(item.rentalPrice || item.purchasePrice) && (
+                  <div className="mt-4 pt-4 border-t border-gray-700">
+                    {item.rentalPrice && (
+                      <p className="text-orange-400">
+                        €{Number(item.rentalPrice).toFixed(2)} / Tag Miete
+                      </p>
+                    )}
+                    {item.purchasePrice && (
+                      <p className="text-gray-400 text-sm">
+                        Kaufpreis: €{Number(item.purchasePrice).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </Link>
           ))}
         </div>

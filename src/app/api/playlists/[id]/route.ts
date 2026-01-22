@@ -6,7 +6,7 @@ interface PlaylistSongWithSong {
   song: {
     title: string;
     artist: string;
-    filePath: string | null;
+    mp3Path: string | null;
   };
 }
 
@@ -29,7 +29,7 @@ export async function GET(
       include: {
         songs: {
           include: { song: true },
-          orderBy: { order: "asc" },
+          orderBy: { position: "asc" },
         },
         parties: true,
       },
@@ -42,7 +42,7 @@ export async function GET(
     // If download is requested, create a ZIP of all MP3 files
     if (download === "mp3") {
       const songsWithFiles = playlist.songs.filter(
-        (ps: PlaylistSongWithSong) => ps.song.filePath,
+        (ps: PlaylistSongWithSong) => ps.song.mp3Path,
       );
 
       if (songsWithFiles.length === 0) {
@@ -56,7 +56,7 @@ export async function GET(
       const files = songsWithFiles.map((ps: PlaylistSongWithSong) => ({
         title: ps.song.title,
         artist: ps.song.artist,
-        path: ps.song.filePath,
+        path: ps.song.mp3Path,
       }));
 
       return NextResponse.json({ files });
@@ -95,7 +95,7 @@ export async function PUT(
         songs: {
           create: (body.songs || []).map((songId: string, index: number) => ({
             songId,
-            order: index,
+            position: index,
           })),
         },
       },

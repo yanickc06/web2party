@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Partner {
   id: string;
@@ -24,6 +25,7 @@ interface Equipment {
   specs: string | null;
   notes: string | null;
   rentalPartnerId: string | null;
+  imageUrl: string | null;
 }
 
 export default function EditEquipmentPage({
@@ -33,12 +35,15 @@ export default function EditEquipmentPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [isOwned, setIsOwned] = useState(true);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -53,37 +58,82 @@ export default function EditEquipmentPage({
       .finally(() => setLoadingData(false));
   }, [id]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get("name"),
-      category: formData.get("category"),
-      brand: formData.get("brand") || null,
-      model: formData.get("model") || null,
-      serialNumber: formData.get("serialNumber") || null,
-      location: formData.get("location") || null,
-      isOwned: isOwned,
-      rentalPrice: formData.get("rentalPrice")
-        ? parseFloat(formData.get("rentalPrice") as string)
-        : null,
-      purchasePrice: formData.get("purchasePrice")
-        ? parseFloat(formData.get("purchasePrice") as string)
-        : null,
-      purchaseDate: formData.get("purchaseDate") || null,
-      specs: formData.get("specs") || null,
-      notes: formData.get("notes") || null,
-      rentalPartnerId: formData.get("rentalPartnerId") || null,
-    };
+    const formDataElement = new FormData(e.currentTarget);
+
+    // Erstelle FormData für Upload
+    const uploadFormData = new FormData();
+    uploadFormData.append("name", formDataElement.get("name") as string);
+    uploadFormData.append(
+      "category",
+      formDataElement.get("category") as string,
+    );
+    uploadFormData.append(
+      "brand",
+      (formDataElement.get("brand") as string) || "",
+    );
+    uploadFormData.append(
+      "model",
+      (formDataElement.get("model") as string) || "",
+    );
+    uploadFormData.append(
+      "serialNumber",
+      (formDataElement.get("serialNumber") as string) || "",
+    );
+    uploadFormData.append(
+      "location",
+      (formDataElement.get("location") as string) || "",
+    );
+    uploadFormData.append("isOwned", String(isOwned));
+    uploadFormData.append(
+      "rentalPrice",
+      (formDataElement.get("rentalPrice") as string) || "",
+    );
+    uploadFormData.append(
+      "purchasePrice",
+      (formDataElement.get("purchasePrice") as string) || "",
+    );
+    uploadFormData.append(
+      "purchaseDate",
+      (formDataElement.get("purchaseDate") as string) || "",
+    );
+    uploadFormData.append(
+      "specs",
+      (formDataElement.get("specs") as string) || "",
+    );
+    uploadFormData.append(
+      "notes",
+      (formDataElement.get("notes") as string) || "",
+    );
+    uploadFormData.append(
+      "rentalPartnerId",
+      (formDataElement.get("rentalPartnerId") as string) || "",
+    );
+
+    if (imageFile) {
+      uploadFormData.append("image", imageFile);
+    }
 
     try {
       const response = await fetch(`/api/equipment/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: uploadFormData,
       });
 
       if (!response.ok) {
@@ -129,6 +179,53 @@ export default function EditEquipmentPage({
             {error}
           </div>
         )}
+
+        {/* Gerätefoto */}
+        <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">
+            📷 Gerätefoto
+          </h2>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              {imagePreview || equipment.imageUrl ? (
+                <Image
+                  src={imagePreview || equipment.imageUrl || ""}
+                  alt={equipment.name}
+                  width={160}
+                  height={160}
+                  className="w-40 h-40 object-cover rounded-lg border-2 border-gray-600"
+                />
+              ) : (
+                <div className="w-40 h-40 bg-gray-700 rounded-lg flex items-center justify-center border-2 border-gray-600">
+                  <span className="text-5xl">🔊</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors">
+                {equipment.imageUrl || imagePreview
+                  ? "Foto ändern"
+                  : "Foto hinzufügen"}
+              </button>
+              <p className="text-gray-500 text-sm mt-2">JPG, PNG, max. 5MB</p>
+              {imageFile && (
+                <p className="text-green-400 text-sm mt-1">
+                  ✓ Neues Foto ausgewählt: {imageFile.name}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
 
         <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">

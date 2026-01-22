@@ -23,7 +23,7 @@ async function getStats() {
   const upcomingParties = await prisma.party.findMany({
     where: {
       date: { gte: new Date() },
-      status: { in: ["PLANNED", "CONFIRMED"] },
+      status: { in: ["INQUIRY", "CONFIRMED"] },
     },
     include: {
       customer: true,

@@ -13,7 +13,7 @@ interface Song {
   genre: string | null;
   bpm: number | null;
   mood: string | null;
-  filePath: string | null;
+  mp3Path: string | null;
   notes: string | null;
   createdAt: string;
 }
@@ -116,17 +116,17 @@ export default function SongDetailPage({
         </div>
       </div>
 
-      {song.filePath && (
+      {song.mp3Path && (
         <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">
             🎵 MP3-Datei
           </h2>
           <div className="flex items-center gap-4">
             <audio controls className="flex-1">
-              <source src={song.filePath} type="audio/mpeg" />
+              <source src={song.mp3Path} type="audio/mpeg" />
             </audio>
             <a
-              href={song.filePath}
+              href={song.mp3Path}
               download
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
               ⬇️ Download

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         contactPerson: body.contactPerson || null,
         phone: body.phone || null,
         email: body.email || null,
-        capacity: body.capacity || null,
+        capacity: body.capacity ? parseInt(body.capacity) : null,
         notes: body.notes || null,
         customerId: body.customerId || null,
       },

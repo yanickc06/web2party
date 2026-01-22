@@ -94,6 +94,16 @@ export default function PartyDetailPage({
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/dashboard/parties/${id}/wuensche`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            🎵 Musikwünsche
+          </Link>
+          <Link
+            href={`/dashboard/parties/${id}/packliste`}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+            📦 Packliste
+          </Link>
+          <Link
             href={`/dashboard/parties/${id}/edit`}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition">
             Bearbeiten
@@ -136,13 +146,13 @@ export default function PartyDetailPage({
             <div>
               <dt className="text-gray-400 text-sm">Preis</dt>
               <dd className="text-white text-xl font-bold">
-                {party.price ? `${party.price.toFixed(2)} €` : "-"}
+                {party.price ? `${Number(party.price).toFixed(2)} €` : "-"}
               </dd>
             </div>
             <div>
               <dt className="text-gray-400 text-sm">Anzahlung</dt>
               <dd className="text-white">
-                {party.deposit ? `${party.deposit.toFixed(2)} €` : "-"}{" "}
+                {party.deposit ? `${Number(party.deposit).toFixed(2)} €` : "-"}{" "}
                 {party.depositPaid && (
                   <span className="text-green-400 text-sm">✓ bezahlt</span>
                 )}

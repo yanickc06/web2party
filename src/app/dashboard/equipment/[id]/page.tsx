@@ -133,7 +133,7 @@ export default function EquipmentDetailPage({
                   <dt className="text-gray-400 text-sm">Kaufpreis</dt>
                   <dd className="text-white">
                     {equipment.purchasePrice
-                      ? `${equipment.purchasePrice.toFixed(2)} €`
+                      ? `${Number(equipment.purchasePrice).toFixed(2)} €`
                       : "-"}
                   </dd>
                 </div>
@@ -154,7 +154,7 @@ export default function EquipmentDetailPage({
                   <dt className="text-gray-400 text-sm">Mietpreis/Tag</dt>
                   <dd className="text-white">
                     {equipment.rentalPrice
-                      ? `${equipment.rentalPrice.toFixed(2)} €`
+                      ? `${Number(equipment.rentalPrice).toFixed(2)} €`
                       : "-"}
                   </dd>
                 </div>
