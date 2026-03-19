@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: Props) {
     }
 
     // QR-Code generieren
-    const url = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/wunsch/${code}`;
+    const url = `${process.env.NEXTAUTH_URL || "http://web2party.vercel.app:3000"}/wunsch/${code}`;
     const qrCodeDataUrl = await QRCode.toDataURL(url, {
       width: 400,
       margin: 2,
