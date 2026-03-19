@@ -1,20 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
-interface EquipmentWithPartner {
-  id: string;
-  name: string;
-  category: string;
-  brand: string | null;
-  model: string | null;
-  location: string | null;
-  isOwned: boolean;
-  rentalPrice: number | null;
-  purchasePrice: number | null;
-  imageUrl: string | null;
-  rentalPartner: { name: string } | null;
-}
+type EquipmentWithPartner = Prisma.EquipmentGetPayload<{
+  include: { rentalPartner: true };
+}>;
 
 async function getEquipment() {
   return prisma.equipment.findMany({
