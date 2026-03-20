@@ -189,6 +189,11 @@ export default function MusicPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href="/dashboard/music/spotify-import"
+            className="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg font-medium transition flex items-center gap-2">
+            🎵 Spotify Import
+          </Link>
+          <Link
             href="/dashboard/music/bulk-upload"
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition flex items-center gap-2">
             📦 Bulk Upload
